@@ -6,7 +6,7 @@ import java.util.Random;
 
 import test.TopicManagerSingleton.TopicManager;
 
-public class MainTrain { // simple tests to get you going...
+public class MainTrain {
 
 
     public static void testMessage() {
