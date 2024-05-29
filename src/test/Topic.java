@@ -5,8 +5,8 @@ import java.util.List;
 
 public class Topic {
     public final String name;
-    private final List<Agent> subs;
-    private final List<Agent> pubs;
+    final List<Agent> subs;
+    final List<Agent> pubs;
 
     Topic(String name){
         this.name = name;
