@@ -10,13 +10,16 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
+import test.MainTrain.TestServlet;
 import test.RequestParser.RequestInfo;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+
 
 
 public class MainTrain { // RequestParser
-    
 
     private static void testParseRequest() {
         // Test data
@@ -72,11 +75,74 @@ public class MainTrain { // RequestParser
     }
 
 
-    public static void testServer() throws Exception{
-		// implement your own tests!
+    static class TestServlet implements Servlet {
+        @Override
+        public void handle(RequestInfo ri, OutputStream toClient) throws IOException {
+            PrintWriter out = new PrintWriter(toClient);
+            out.println("HTTP/1.1 200 OK");
+            out.println("Content-Type: text/plain");
+            out.println("Content-Length: 14");
+            out.println();
+            out.println("Hello, World!");
+            out.flush();
+        }
 
+        @Override
+        public void close() throws IOException {
+            // No specific resource to close in this example
+
+        }
+    }
+
+    private static String sendHttpRequest(String method, String host, int port, String path) throws IOException {
+        try (Socket socket = new Socket(host, port);
+             PrintWriter out = new PrintWriter(socket.getOutputStream());
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            out.println(method + " " + path + " HTTP/1.1");
+            out.println("Host: " + host);
+            out.println("Connection: close");
+            out.println();
+            out.flush();
+
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line).append("\n");
+            }
+
+            return response.toString();
+        }
+    }
+
+    private static void testServer() throws IOException {
+        HTTPServer server = new MyHTTPServer(8080, 10);
+        server.addServlet("GET", "/test", new TestServlet());
+        server.start();
+
+        try {
+            Thread.sleep(1000); // Give the server a moment to start
+
+            String response = sendHttpRequest("GET", "localhost", 8080, "/test");
+            if (response.contains("Hello, World!")) {
+                System.out.println("GET test passed.");
+            } else {
+                System.out.println("GET test failed.");
+            }
+
+            response = sendHttpRequest("GET", "localhost", 8080, "/invalid");
+            if (!response.contains("HTTP/1.1 404 Not Found")) {
+                System.out.println("Invalid URI test failed.");
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            server.close();
+        }
     }
     
+
     public static void main(String[] args) {
         testParseRequest(); // 40 points
         try{

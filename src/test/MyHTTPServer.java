@@ -1,89 +1,130 @@
 package test;
 
 import test.*;
-
-import java.io.*;
-import java.net.*;
-import java.util.concurrent.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MyHTTPServer extends Thread implements HTTPServer {
-
-    private final int port;
-    private final int nThreads;
-    private final Map<String, Map<String, Servlet>> servlets = new ConcurrentHashMap<>();
-    private final ExecutorService executor;
+    private final ServerSocket serverSocket;
+    private final ExecutorService threadPool;
+    private final Map<String, Servlet> getServlets = new ConcurrentHashMap<>();
+    private final Map<String, Servlet> postServlets = new ConcurrentHashMap<>();
+    private final Map<String, Servlet> deleteServlets = new ConcurrentHashMap<>();
     private volatile boolean running = true;
 
-    public MyHTTPServer(int port, int nThreads) {
-        this.port = port;
-        this.nThreads = nThreads;
-        this.executor = Executors.newFixedThreadPool(nThreads);
-        servlets.put("GET", new ConcurrentHashMap<>());
-        servlets.put("POST", new ConcurrentHashMap<>());
-        servlets.put("DELETE", new ConcurrentHashMap<>());
+    public MyHTTPServer(int port, int maxThreads) throws IOException {
+        this.serverSocket = new ServerSocket(port);
+        this.threadPool = Executors.newFixedThreadPool(maxThreads);
     }
 
-    public void addServlet(String httpCommand, String uri, Servlet s) {
-        servlets.get(httpCommand.toUpperCase()).put(uri, s);
+    @Override
+    public void addServlet(String httpCommand, String uri, Servlet servlet) {
+        switch (httpCommand.toUpperCase()) {
+            case "GET":
+                getServlets.put(uri, servlet);
+                break;
+            case "POST":
+                postServlets.put(uri, servlet);
+                break;
+            case "DELETE":
+                deleteServlets.put(uri, servlet);
+                break;
+        }
     }
 
+    @Override
     public void removeServlet(String httpCommand, String uri) {
-        servlets.get(httpCommand.toUpperCase()).remove(uri);
+        switch (httpCommand.toUpperCase()) {
+            case "GET":
+                getServlets.remove(uri);
+                break;
+            case "POST":
+                postServlets.remove(uri);
+                break;
+            case "DELETE":
+                deleteServlets.remove(uri);
+                break;
+        }
     }
 
+    @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (running) {
-                try {
-                    Socket clientSocket = serverSocket.accept();
-                    executor.submit(() -> handleClient(clientSocket));
-                } catch (IOException e) {
-                    if (!running) {
-                        break;
-                    }
-                }
+        while (running) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                threadPool.execute(() -> handleClient(clientSocket));
+            } catch (IOException e) {
+                if (!running) break;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            executor.shutdown();
         }
     }
 
     private void handleClient(Socket clientSocket) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             OutputStream out = clientSocket.getOutputStream()) {
-            RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(reader);
-            String command = requestInfo.getHttpCommand();
-            String uri = requestInfo.getUri();
-
-            Map<String, Servlet> commandServlets = servlets.get(command.toUpperCase());
-            Servlet servlet = commandServlets.get(uri);
-
+        try {
+            RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(new BufferedReader(new InputStreamReader(clientSocket.getInputStream())));
+            Servlet servlet = getMatchingServlet(requestInfo.getHttpCommand(), requestInfo.getUri());
             if (servlet != null) {
-                servlet.handle(requestInfo, out);
+                servlet.handle(requestInfo, clientSocket.getOutputStream());
             } else {
-                out.write("HTTP/1.1 404 Not Found\r\n".getBytes());
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
+                out.println("HTTP/1.1 404 Not Found");
+                out.println("Content-Type: text/plain");
+                out.println("Content-Length: 0");
+                out.println();
+                out.flush();
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public void close() {
+    private Servlet getMatchingServlet(String httpCommand, String uri) {
+        Map<String, Servlet> servletMap;
+        switch (httpCommand.toUpperCase()) {
+            case "GET":
+                servletMap = getServlets;
+                break;
+            case "POST":
+                servletMap = postServlets;
+                break;
+            case "DELETE":
+                servletMap = deleteServlets;
+                break;
+            default:
+                return null;
+        }
+        List<String> matchingKeys = servletMap.keySet().stream()
+                .filter(uri::startsWith)
+                .sorted((a, b) -> Integer.compare(b.length(), a.length()))
+                .collect(Collectors.toList());
+        return matchingKeys.isEmpty() ? null : servletMap.get(matchingKeys.get(0));
+    }
+
+    @Override
+    public void start() {
+        super.start();
+    }
+
+    @Override
+    public void close() throws IOException {
         running = false;
-        try {
-            new Socket("localhost", port).close(); // Trigger serverSocket.accept() to return
-        } catch (IOException ignored) {
-        }
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            executor.shutdownNow();
-        }
+        serverSocket.close();
+        threadPool.shutdown();
     }
 }
