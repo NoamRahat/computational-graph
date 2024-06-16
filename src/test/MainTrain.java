@@ -74,6 +74,7 @@ public class MainTrain { // RequestParser
 
     public static void testServer() throws Exception{
 		// implement your own tests!
+
     }
     
     public static void main(String[] args) {
