@@ -1,89 +1,144 @@
 package test;
 
-import test.*;
-
 import java.io.*;
 import java.net.*;
-import java.util.concurrent.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
 
 public class MyHTTPServer extends Thread implements HTTPServer {
-
     private final int port;
     private final int nThreads;
-    private final Map<String, Map<String, Servlet>> servlets = new ConcurrentHashMap<>();
-    private final ExecutorService executor;
-    private volatile boolean running = true;
+    private final ExecutorService threadPool;
+    private final Map<String, Servlet> getServlets;
+    private final Map<String, Servlet> postServlets;
+    private final Map<String, Servlet> deleteServlets;
+    private final Lock lock;
+    private volatile boolean running;
 
     public MyHTTPServer(int port, int nThreads) {
         this.port = port;
         this.nThreads = nThreads;
-        this.executor = Executors.newFixedThreadPool(nThreads);
-        servlets.put("GET", new ConcurrentHashMap<>());
-        servlets.put("POST", new ConcurrentHashMap<>());
-        servlets.put("DELETE", new ConcurrentHashMap<>());
+        this.threadPool = Executors.newFixedThreadPool(nThreads);
+        this.getServlets = new ConcurrentHashMap<>();
+        this.postServlets = new ConcurrentHashMap<>();
+        this.deleteServlets = new ConcurrentHashMap<>();
+        this.lock = new ReentrantLock();
+        this.running = true;
     }
 
+    @Override
     public void addServlet(String httpCommand, String uri, Servlet s) {
-        servlets.get(httpCommand.toUpperCase()).put(uri, s);
+        lock.lock();
+        try {
+            switch (httpCommand) {
+                case "GET":
+                    getServlets.put(uri, s);
+                    break;
+                case "POST":
+                    postServlets.put(uri, s);
+                    break;
+                case "DELETE":
+                    deleteServlets.put(uri, s);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
+    @Override
     public void removeServlet(String httpCommand, String uri) {
-        servlets.get(httpCommand.toUpperCase()).remove(uri);
+        lock.lock();
+        try {
+            switch (httpCommand) {
+                case "GET":
+                    getServlets.remove(uri);
+                    break;
+                case "POST":
+                    postServlets.remove(uri);
+                    break;
+                case "DELETE":
+                    deleteServlets.remove(uri);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
+    @Override
+    public void start() {
+        new Thread(this).start();
+    }
+
+    @Override
+    public void close() {
+        running = false;
+        threadPool.shutdown();
+    }
+
+    @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    executor.submit(() -> handleClient(clientSocket));
+                    threadPool.execute(() -> handleClient(clientSocket));
                 } catch (IOException e) {
-                    if (!running) {
-                        break;
-                    }
+                    if (!running) break;  // Stop accepting new connections if server is closing
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            executor.shutdown();
         }
     }
 
     private void handleClient(Socket clientSocket) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              OutputStream out = clientSocket.getOutputStream()) {
-            RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(reader);
-            String command = requestInfo.getHttpCommand();
-            String uri = requestInfo.getUri();
 
-            Map<String, Servlet> commandServlets = servlets.get(command.toUpperCase());
-            Servlet servlet = commandServlets.get(uri);
+            RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(in);
+
+            Servlet servlet = null;
+            switch (requestInfo.getHttpCommand()) {
+                case "GET":
+                    servlet = findMatchingServlet(getServlets, requestInfo.getUri());
+                    break;
+                case "POST":
+                    servlet = findMatchingServlet(postServlets, requestInfo.getUri());
+                    break;
+                case "DELETE":
+                    servlet = findMatchingServlet(deleteServlets, requestInfo.getUri());
+                    break;
+            }
 
             if (servlet != null) {
                 servlet.handle(requestInfo, out);
             } else {
-                out.write("HTTP/1.1 404 Not Found\r\n".getBytes());
+                out.write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void close() {
-        running = false;
-        try {
-            new Socket("localhost", port).close(); // Trigger serverSocket.accept() to return
-        } catch (IOException ignored) {
-        }
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+    private Servlet findMatchingServlet(Map<String, Servlet> servletMap, String uri) {
+        Servlet matchedServlet = null;
+        String longestMatch = "";
+
+        for (String registeredUri : servletMap.keySet()) {
+            if (uri.startsWith(registeredUri) && registeredUri.length() > longestMatch.length()) {
+                longestMatch = registeredUri;
+                matchedServlet = servletMap.get(registeredUri);
             }
-        } catch (InterruptedException e) {
-            executor.shutdownNow();
         }
+
+        return matchedServlet;
     }
 }
