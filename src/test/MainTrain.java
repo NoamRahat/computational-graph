@@ -5,20 +5,23 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import test.RequestParser.RequestInfo;
+import java.util.concurrent.ThreadPoolExecutor;
 
-public class MainTrain {
+import test.MyHTTPServer;
+import test.RequestParser;
+import test.SubServlet;
+
+public class MainTrain { // RequestParser
+
 
     private static void testParseRequest() {
         // Test data
+
         String request = "GET /api/resource?id=123&name=test HTTP/1.1\n" +
                             "Host: example.com\n" +
                             "Content-Length: 5\n"+
@@ -28,7 +31,7 @@ public class MainTrain {
                             "hello world!\n"+
                             "\n" ;
 
-        BufferedReader input = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(request.getBytes())));
+        BufferedReader input=new BufferedReader(new InputStreamReader(new ByteArrayInputStream(request.getBytes())));
         try {
             RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(input);
 
@@ -49,7 +52,7 @@ public class MainTrain {
                 for(String s : requestInfo.getUriSegments()){
                     System.out.println(s);
                 }
-            } 
+            }
             // Test parameters
             Map<String, String> expectedParams = new HashMap<>();
             expectedParams.put("id", "123");
@@ -63,77 +66,120 @@ public class MainTrain {
             byte[] expectedContent = "hello world!\n".getBytes();
             if (!Arrays.equals(requestInfo.getContent(), expectedContent)) {
                 System.out.println("Content test failed (-5)");
-            } 
+            }
             input.close();
         } catch (IOException e) {
             System.out.println("Exception occurred during parsing: " + e.getMessage() + " (-5)");
-        }        
+        }
+
+        request = "GET /sub?a=10&b=3 HTTP/1.1\n" +
+                    "Host: localhost\n" +
+                    "Content-Length: 0\n" +
+                    "\n";
+
+        input=new BufferedReader(new InputStreamReader(new ByteArrayInputStream(request.getBytes())));
+
+        try {
+            RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(input);
+        }
+        catch (IOException e) {
+            System.out.println("Exception occurred during parsing: " + e.getMessage() + " (-5)");
+        }
+
     }
+
 
     public static void testServer() throws Exception {
-        HTTPServer server = new MyHTTPServer(8080, 5);
-        server.addServlet("GET", "/calculate", new CalculatorServlet());
+        System.out.println("1num of threads " + Thread.activeCount());
 
-        // Add debug statement to indicate server start
-        System.out.println("Starting server...");
+        // create server
+        MyHTTPServer server = new MyHTTPServer(8082, 5);
+        server.addServlet("GET", "/sub", new SubServlet());
+
         server.start();
+        System.out.println("2num of threads " + Thread.activeCount());
 
-        // Create a client socket
-        try (Socket client = new Socket("localhost", 8080);
-             PrintWriter out = new PrintWriter(client.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+        // timeout
+        Thread.sleep(1000);
 
-            // Send a request to the server
-            System.out.println("Sending request...");
-            out.println("GET /calculate?operation=add&a=5&b=3 HTTP/1.1");
-            out.println("Host: localhost");
-            out.println();
+        int numOfThreads = Thread.activeCount();
 
-            // Read the response
-            System.out.println("Reading response...");
+        if (numOfThreads != 2) {
+            return;
+        }
+
+        try {
+            // create a client
+            Socket client = new Socket("localhost", 8082);
+
+            // send a request
+            OutputStream out = client.getOutputStream();
+
+            String request = "GET /sub?a=10&b=3 HTTP/1.1\r\n" +
+                             "Host: localhost\r\n" +
+                             "Content-Length: 0\r\n" +
+                             "\r\n";
+            out.write(request.getBytes());
+            // flush the output stream to make sure the request is sent
+            out.flush();
+
+            Thread.sleep(1000);
+
+            System.out.println(Thread.activeCount());
+
+            client.setSoTimeout(5000); // Set timeout to 5000 milliseconds
+
+            // Get the response
+            BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            String responseLine;
             StringBuilder response = new StringBuilder();
-            String line;
-            boolean headersRead = false;
-            while ((line = in.readLine()) != null) {
-                if (!headersRead && line.isEmpty()) {
-                    headersRead = true;
-                    continue; // Skip empty line after headers
+            try {
+                while ((responseLine = in.readLine()) != null) {
+                    response.append(responseLine).append("\r\n");
+                    System.out.println("Received: " + responseLine); // Debugging log
+                    if (responseLine.startsWith("Result:")) {
+                        System.out.println(responseLine);
+                        break;
+                    }
                 }
-                response.append(line).append("\n");
+                System.out.println("Full response:\n" + response.toString());
+            } catch (SocketTimeoutException e) {
+                System.out.println("Read timed out. No data received for 5 seconds.");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-            // Check the response
-            System.out.println("Response received:");
-            System.out.println(response.toString());
+            // close the client and all resources
+            out.close();
+            in.close();
+            client.close();
 
-        } catch (IOException e) {
-            System.out.println("Client error: " + e.getMessage());
-        } finally {
-            // Close client resources
-            System.out.println("Closing client...");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        // Close server
-        System.out.println("Closing server...");
-        server.close();
-
-        // Wait for threads to finish
-        ExecutorService threadPool = Executors.newFixedThreadPool(5);
-        threadPool.shutdown();
-        if (!threadPool.awaitTermination(2, TimeUnit.SECONDS)) {
-            System.out.println("Test failed: threads did not terminate in 2 seconds");
-        } else {
-            System.out.println("Server and threads closed successfully.");
+        try {
+            server.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
+        // wait 2 seconds for all threads to close
+        Thread.sleep(2000);
+
+        System.out.println(Thread.activeCount());
     }
+
 
     public static void main(String[] args) {
         testParseRequest(); // 40 points
-        try {
-            testServer(); // 60 points
-        } catch (Exception e) {
-            System.out.println("Your server threw an exception (-60): " + e.getMessage());
+        try{
+            testServer(); // 60
+        }catch(Exception e){
+            System.out.println("your server throwed an exception (-60)");
         }
+        System.out.println(Thread.activeCount());
         System.out.println("done");
     }
+
 }

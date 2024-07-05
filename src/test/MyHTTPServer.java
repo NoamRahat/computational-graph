@@ -88,11 +88,14 @@ public class MyHTTPServer extends Thread implements HTTPServer {
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
+                    System.out.println("Accepted connection from " + clientSocket.getRemoteSocketAddress());
                     threadPool.execute(() -> handleClient(clientSocket));
                 } catch (IOException e) {
                     if (!running) break;  // Stop accepting new connections if server is closing
                 }
             }
+        } catch (BindException e) {
+            System.err.println("Port " + port + " is already in use. Please try a different port.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -102,7 +105,10 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              OutputStream out = clientSocket.getOutputStream()) {
 
+            System.out.println("Handling client request");
+
             RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(in);
+            System.out.println("Parsed request: " + requestInfo.getHttpCommand() + " " + requestInfo.getUri());
 
             Servlet servlet = null;
             switch (requestInfo.getHttpCommand()) {
@@ -119,8 +125,11 @@ public class MyHTTPServer extends Thread implements HTTPServer {
 
             if (servlet != null) {
                 servlet.handle(requestInfo, out);
+                System.out.println("Servlet handled the request");
             } else {
-                out.write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
+                String notFoundResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+                out.write(notFoundResponse.getBytes());
+                System.out.println("No matching servlet found. Sent 404 Not Found.");
             }
 
         } catch (IOException e) {
