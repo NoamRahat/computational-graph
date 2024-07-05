@@ -1,4 +1,4 @@
-package test;
+package configs;
 
 public class MathExampleConfig implements Config {
 

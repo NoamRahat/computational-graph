@@ -1,7 +1,10 @@
-package test;
+package servlets;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import server.RequestParser;
+
 
 public class SubServlet implements Servlet {
     @Override
@@ -27,8 +30,7 @@ public class SubServlet implements Servlet {
             e.printStackTrace();
         }
     }
-
-	@Override
+    @Override
 	public void close() throws IOException {
 		// TODO Auto-generated method stub
 		

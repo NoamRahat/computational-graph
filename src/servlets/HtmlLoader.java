@@ -1,7 +1,9 @@
-package test;
+package servlets;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import server.RequestParser;
 
 public class HtmlLoader implements Servlet{
         private String htmlFolder;

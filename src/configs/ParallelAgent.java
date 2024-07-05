@@ -1,7 +1,10 @@
-package test;
+package configs;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import graph.Agent;
+import graph.Message;
 
 public class ParallelAgent implements Agent {
     private final Agent agent;

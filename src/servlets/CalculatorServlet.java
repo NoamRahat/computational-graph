@@ -1,9 +1,10 @@
-package test;
+package servlets;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import test.RequestParser.RequestInfo;
+
+import server.RequestParser.RequestInfo;
 
 public class CalculatorServlet implements Servlet {
     @Override

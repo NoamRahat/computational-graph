@@ -1,10 +1,11 @@
-package test;
+package graph;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import test.TopicManagerSingleton.TopicManager;
+import configs.Node;
+import graph.TopicManagerSingleton.TopicManager;
 
 public class Graph extends ArrayList<Node> {
 

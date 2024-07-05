@@ -12,9 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import test.MyHTTPServer;
-import test.RequestParser;
-import test.SubServlet;
+import server.MyHTTPServer;
+import server.RequestParser;
+import servlets.SubServlet;
 
 public class MainTrain { // RequestParser
 
@@ -93,7 +93,7 @@ public class MainTrain { // RequestParser
         System.out.println("1num of threads " + Thread.activeCount());
 
         // create server
-        MyHTTPServer server = new MyHTTPServer(8082, 5);
+        MyHTTPServer server = new MyHTTPServer(8081, 5);
         server.addServlet("GET", "/sub", new SubServlet());
 
         server.start();
@@ -110,7 +110,7 @@ public class MainTrain { // RequestParser
 
         try {
             // create a client
-            Socket client = new Socket("localhost", 8082);
+            Socket client = new Socket("localhost", 8081);
 
             // send a request
             OutputStream out = client.getOutputStream();
@@ -169,7 +169,6 @@ public class MainTrain { // RequestParser
 
         System.out.println(Thread.activeCount());
     }
-
 
     public static void main(String[] args) {
         testParseRequest(); // 40 points
