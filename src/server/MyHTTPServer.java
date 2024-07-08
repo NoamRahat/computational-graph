@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -19,9 +20,9 @@ public class MyHTTPServer extends Thread implements HTTPServer {
     private final int port;
     private final int nThreads;
     private final ExecutorService threadPool;
-    private ConcurrentHashMap<String, Servlet> getServerlet = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Servlet> postServerlet = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Servlet> deleteServerlet = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Servlet> getServerlet;
+    private final ConcurrentHashMap<String, Servlet> postServerlet;
+    private final ConcurrentHashMap<String, Servlet> deleteServerlet;
     private final Lock lock;
     private volatile boolean running;
 
@@ -36,26 +37,22 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         this.running = true;
     }
 
-    private BufferedReader getBufferedReader(Socket socket) throws IOException {
-        return new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    }
-
     @Override
     public void addServlet(String httpCommand, String uri, Servlet s) {
         lock.lock();
         try {
             switch (httpCommand) {
                 case "GET":
-                    getServerlet.put(uri, s); // Use getServerlet for GET requests
+                    getServerlet.put(uri, s);
                     break;
-                // Add cases for "POST" and "DELETE", using postServerlet and deleteServerlet respectively
                 case "POST":
-                    postServerlet.put(uri, s); // Use postServerlet for POST requests
+                    postServerlet.put(uri, s);
                     break;
                 case "DELETE":
-                    deleteServerlet.put(uri, s); // Use deleteServerlet for DELETE requests
+                    deleteServerlet.put(uri, s);
                     break;
-                // Consider adding a default case to handle unexpected httpCommand values
+                default:
+                    throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
             }
         } finally {
             lock.unlock();
@@ -68,13 +65,13 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try {
             switch (httpCommand) {
                 case "GET":
-                    getServerlet.remove(uri); // Corrected from getServlets to get_map
+                    getServerlet.remove(uri);
                     break;
                 case "POST":
-                    postServerlet.remove(uri); // Corrected from postServlets to postServerlet
+                    postServerlet.remove(uri);
                     break;
                 case "DELETE":
-                    deleteServerlet.remove(uri); // Corrected from deleteServlets to deleteServerlet
+                    deleteServerlet.remove(uri);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
@@ -97,88 +94,23 @@ public class MyHTTPServer extends Thread implements HTTPServer {
 
     @Override
     public void run() {
-        // create the server socket
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            //System.out.println("inside run after sleep");
-
-            // define 1s timeout
             serverSocket.setSoTimeout(1000);
-
-            //System.out.println("inside run after sleep");
-
             while (running) {
                 try {
-                    //System.out.println("inside run after sleep");
-                    // accept a new connection
                     Socket client = serverSocket.accept();
-                    //client.setSoTimeout(1000);
-                    // each connected client will go through this procedure when it connects to the server
-                    threadPool.submit(() -> {
-                        try {
-                            // get the client input:
-                            BufferedReader reader = getBufferedReader(client);
-
-                            // parse the request
-                            RequestParser.RequestInfo ri = RequestParser.parseRequest(reader);
-                            ConcurrentHashMap<String, Servlet> servletMap;
-                            if (ri != null) {
-                                switch (ri.getHttpCommand()) {
-                                    case "GET":
-                                        servletMap = getServerlet;
-                                        break;
-                                    case "POST":
-                                        servletMap = postServerlet;
-                                        break;
-                                    case "DELETE":
-                                        servletMap = deleteServerlet;
-                                        break;
-                                    default:
-                                        throw new IllegalArgumentException("Unsupported HTTP command: " + ri.getHttpCommand());
-                                }
-
-                                // search for the longest uri match:
-                                String longestMatch = "";
-                                Servlet servlet = null;
-                                for (Map.Entry<String, Servlet> entry : servletMap.entrySet()) {
-                                    if (ri.getUri().startsWith(entry.getKey()) && entry.getKey().length() > longestMatch.length()) {
-                                        longestMatch = entry.getKey();
-                                        servlet = entry.getValue();
-                                    }
-                                }
-
-                                // if servlet is not null, activate the handle() method
-                                if (servlet != null) {
-                                    servlet.handle(ri, client.getOutputStream());
-                                }
-                            }
-                            reader.close();
-                        } catch (IOException e) {
-                            System.out.println("Timeout expired and no request was received.");
-                            e.printStackTrace();
-                        } finally {
-                            // close the client socket
-                            try {
-                                client.close();
-                            } catch (IOException e) {
-                                System.out.println("IOException 1");
-                                e.printStackTrace();
-                            }
-                        }
-                    });
+                    client.setSoTimeout(5000);
+                    threadPool.submit(() -> handleClient(client));
+                } catch (SocketTimeoutException e) {
+                    // Continue on timeout to allow for clean server shutdown
                 } catch (IOException e) {
-                    // accept() timeout exception, do nothing
-                    // if the server is closed, break
-                    if (!running) {
-                        break;
-                    }
+                    e.printStackTrace();
                 }
             }
         } catch (IOException e) {
-            // timeout exception, do nothing
             e.printStackTrace();
         }
     }
-
 
     private void handleClient(Socket clientSocket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -213,6 +145,12 @@ public class MyHTTPServer extends Thread implements HTTPServer {
 
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
