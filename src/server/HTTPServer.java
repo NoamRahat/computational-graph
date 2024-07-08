@@ -2,9 +2,9 @@ package server;
 
 import servlets.Servlet;
 
-public interface HTTPServer extends Runnable{
-    public void addServlet(String httpCommanmd, String uri, Servlet s);
-    public void removeServlet(String httpCommanmd, String uri);
-    public void start();
-    public void close();
+public interface HTTPServer extends Runnable {
+    void addServlet(String httpCommand, String uri, Servlet s);
+    void removeServlet(String httpCommand, String uri);
+    void start();
+    void close();
 }

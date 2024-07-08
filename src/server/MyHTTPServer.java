@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
@@ -20,9 +19,9 @@ public class MyHTTPServer extends Thread implements HTTPServer {
     private final int port;
     private final int nThreads;
     private final ExecutorService threadPool;
-    private final Map<String, Servlet> getServlets;
-    private final Map<String, Servlet> postServlets;
-    private final Map<String, Servlet> deleteServlets;
+    private ConcurrentHashMap<String, Servlet> getServerlet = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Servlet> postServerlet = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Servlet> deleteServerlet = new ConcurrentHashMap<>();
     private final Lock lock;
     private volatile boolean running;
 
@@ -30,11 +29,15 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         this.port = port;
         this.nThreads = nThreads;
         this.threadPool = Executors.newFixedThreadPool(nThreads);
-        this.getServlets = new ConcurrentHashMap<>();
-        this.postServlets = new ConcurrentHashMap<>();
-        this.deleteServlets = new ConcurrentHashMap<>();
+        this.getServerlet = new ConcurrentHashMap<>();
+        this.postServerlet = new ConcurrentHashMap<>();
+        this.deleteServerlet = new ConcurrentHashMap<>();
         this.lock = new ReentrantLock();
         this.running = true;
+    }
+
+    private BufferedReader getBufferedReader(Socket socket) throws IOException {
+        return new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
     @Override
@@ -43,16 +46,16 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try {
             switch (httpCommand) {
                 case "GET":
-                    getServlets.put(uri, s);
+                    getServerlet.put(uri, s); // Use getServerlet for GET requests
                     break;
+                // Add cases for "POST" and "DELETE", using postServerlet and deleteServerlet respectively
                 case "POST":
-                    postServlets.put(uri, s);
+                    postServerlet.put(uri, s); // Use postServerlet for POST requests
                     break;
                 case "DELETE":
-                    deleteServlets.put(uri, s);
+                    deleteServerlet.put(uri, s); // Use deleteServerlet for DELETE requests
                     break;
-                default:
-                    throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
+                // Consider adding a default case to handle unexpected httpCommand values
             }
         } finally {
             lock.unlock();
@@ -65,13 +68,13 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try {
             switch (httpCommand) {
                 case "GET":
-                    getServlets.remove(uri);
+                    getServerlet.remove(uri); // Corrected from getServlets to get_map
                     break;
                 case "POST":
-                    postServlets.remove(uri);
+                    postServerlet.remove(uri); // Corrected from postServlets to postServerlet
                     break;
                 case "DELETE":
-                    deleteServlets.remove(uri);
+                    deleteServerlet.remove(uri); // Corrected from deleteServlets to deleteServerlet
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported HTTP command: " + httpCommand);
@@ -94,22 +97,88 @@ public class MyHTTPServer extends Thread implements HTTPServer {
 
     @Override
     public void run() {
+        // create the server socket
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+            //System.out.println("inside run after sleep");
+
+            // define 1s timeout
+            serverSocket.setSoTimeout(1000);
+
+            //System.out.println("inside run after sleep");
+
             while (running) {
                 try {
-                    Socket clientSocket = serverSocket.accept();
-                    System.out.println("Accepted connection from " + clientSocket.getRemoteSocketAddress());
-                    threadPool.execute(() -> handleClient(clientSocket));
+                    //System.out.println("inside run after sleep");
+                    // accept a new connection
+                    Socket client = serverSocket.accept();
+                    //client.setSoTimeout(1000);
+                    // each connected client will go through this procedure when it connects to the server
+                    threadPool.submit(() -> {
+                        try {
+                            // get the client input:
+                            BufferedReader reader = getBufferedReader(client);
+
+                            // parse the request
+                            RequestParser.RequestInfo ri = RequestParser.parseRequest(reader);
+                            ConcurrentHashMap<String, Servlet> servletMap;
+                            if (ri != null) {
+                                switch (ri.getHttpCommand()) {
+                                    case "GET":
+                                        servletMap = getServerlet;
+                                        break;
+                                    case "POST":
+                                        servletMap = postServerlet;
+                                        break;
+                                    case "DELETE":
+                                        servletMap = deleteServerlet;
+                                        break;
+                                    default:
+                                        throw new IllegalArgumentException("Unsupported HTTP command: " + ri.getHttpCommand());
+                                }
+
+                                // search for the longest uri match:
+                                String longestMatch = "";
+                                Servlet servlet = null;
+                                for (Map.Entry<String, Servlet> entry : servletMap.entrySet()) {
+                                    if (ri.getUri().startsWith(entry.getKey()) && entry.getKey().length() > longestMatch.length()) {
+                                        longestMatch = entry.getKey();
+                                        servlet = entry.getValue();
+                                    }
+                                }
+
+                                // if servlet is not null, activate the handle() method
+                                if (servlet != null) {
+                                    servlet.handle(ri, client.getOutputStream());
+                                }
+                            }
+                            reader.close();
+                        } catch (IOException e) {
+                            System.out.println("Timeout expired and no request was received.");
+                            e.printStackTrace();
+                        } finally {
+                            // close the client socket
+                            try {
+                                client.close();
+                            } catch (IOException e) {
+                                System.out.println("IOException 1");
+                                e.printStackTrace();
+                            }
+                        }
+                    });
                 } catch (IOException e) {
-                    if (!running) break;  // Stop accepting new connections if server is closing
+                    // accept() timeout exception, do nothing
+                    // if the server is closed, break
+                    if (!running) {
+                        break;
+                    }
                 }
             }
-        } catch (BindException e) {
-            System.err.println("Port " + port + " is already in use. Please try a different port.");
         } catch (IOException e) {
+            // timeout exception, do nothing
             e.printStackTrace();
         }
     }
+
 
     private void handleClient(Socket clientSocket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -123,13 +192,13 @@ public class MyHTTPServer extends Thread implements HTTPServer {
             Servlet servlet = null;
             switch (requestInfo.getHttpCommand()) {
                 case "GET":
-                    servlet = findMatchingServlet(getServlets, requestInfo.getUri());
+                    servlet = findMatchingServlet(getServerlet, requestInfo.getUri());
                     break;
                 case "POST":
-                    servlet = findMatchingServlet(postServlets, requestInfo.getUri());
+                    servlet = findMatchingServlet(postServerlet, requestInfo.getUri());
                     break;
                 case "DELETE":
-                    servlet = findMatchingServlet(deleteServlets, requestInfo.getUri());
+                    servlet = findMatchingServlet(deleteServerlet, requestInfo.getUri());
                     break;
             }
 

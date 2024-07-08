@@ -93,7 +93,7 @@ public class MainTrain { // RequestParser
         System.out.println("1num of threads " + Thread.activeCount());
 
         // create server
-        MyHTTPServer server = new MyHTTPServer(8081, 5);
+        MyHTTPServer server = new MyHTTPServer(8080, 5);
         server.addServlet("GET", "/sub", new SubServlet());
 
         server.start();
@@ -110,7 +110,7 @@ public class MainTrain { // RequestParser
 
         try {
             // create a client
-            Socket client = new Socket("localhost", 8081);
+            Socket client = new Socket("localhost", 8080);
 
             // send a request
             OutputStream out = client.getOutputStream();
