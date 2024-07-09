@@ -28,13 +28,13 @@ public class ParallelAgent implements Agent {
         this.running = true;
 
         this.workerThread = new Thread(() -> {
-            while (running || !queue.isEmpty()) {
-                try {
+            try {
+                while (running || !queue.isEmpty()) {
                     MessageTask task = queue.take();
                     agent.callback(task.topic, task.msg);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
+            } catch (InterruptedException e) {
+                // Allow thread to exit
             }
         });
 
@@ -64,6 +64,11 @@ public class ParallelAgent implements Agent {
     public void close() {
         running = false;
         workerThread.interrupt();
+        try {
+            workerThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         agent.close();
     }
 }
