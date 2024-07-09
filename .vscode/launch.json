@@ -9,6 +9,13 @@
             "name": "MainTrain",
             "request": "launch",
             "mainClass": "test.MainTrain",
+            "projectName": "computational-graph"
+        },
+        {
+            "type": "java",
+            "name": "MainTrain",
+            "request": "launch",
+            "mainClass": "test.MainTrain",
             "projectName": "computational-graph_e412c62e"
         },
         {
