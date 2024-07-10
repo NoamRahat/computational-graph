@@ -4,7 +4,7 @@ Welcome to the Computational Graph project repository. This project showcases th
 
 ## Background
 
-One of the best ways to understand how useful libraries work is by writing a simple imitation of them that demonstrates their operating principles. In this project, we have implemented a simple imitation of several complex mechanisms, exercise by exercise, until they come together into one complete project. We have implemented design patterns and architecture, a generic server, and different client sides.
+One of the best ways to understand how useful libraries work is by writing a simple imitation of them that demonstrates their operating principles. In this project, we have implemented a simple imitation of several complex mechanisms, step by step, until they come together into one complete project. We have implemented design patterns and architecture, a generic server, and different client sides.
 
 We aimed to implement a system based on the subscriber/publisher architecture. Using this architecture, we implemented a computational graph with the goal of performing complex calculations - built from computational nodes that operate alongside each other, where the outputs of one node serve as the inputs for other nodes. For example, one node reads a signal from a video camera and publishes a compressed image. Another node subscribes to it, and whenever a frame arrives, it performs image processing using a neural network that detects humans and publishes a data array of their "skeleton." A third node subscribes to it, and whenever a skeleton update arrives, it tries to recognize which visual gesture the person in the image is making, and so on.
 
