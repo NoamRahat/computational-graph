@@ -1,7 +1,3 @@
-Sure, here is the revised README with the requested changes:
-
----
-
 # Computational Graph Project
 
 Welcome to the Computational Graph project repository. This project showcases the implementation of a computational graph using a subscriber/publisher architecture in Java. The project includes components for managing agents, configurations, and an HTTP server with servlets for handling various types of requests.
