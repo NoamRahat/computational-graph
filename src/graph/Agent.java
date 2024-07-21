@@ -5,4 +5,5 @@ public interface Agent {
     void reset();
     void callback(String topic, Message msg);
     void close();
+    Message getLastMessage();
 }

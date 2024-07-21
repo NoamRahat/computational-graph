@@ -35,4 +35,12 @@ public class Topic {
     public void removePublisher(Agent a){
         pubs.remove(a);
     }
+
+    public Message getLastMessage(){
+        return pubs.get(pubs.size() - 1).getLastMessage();
+    }
+
+    public String getName() {
+        return name;
+    }
 }

@@ -1,8 +1,11 @@
 package server;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RequestParser {
@@ -54,6 +57,15 @@ public class RequestParser {
 
         public void setContent(byte[] content) {
             this.content = content;
+        }
+
+        public InputStream getContentStream() {
+            if (this.content != null && this.content.length > 0) {
+                return new ByteArrayInputStream(this.content);
+            } else {
+                // Handle the case where there is no content
+                return null;
+            }
         }
     }
 

@@ -35,4 +35,9 @@ public class Message {
             return Double.NaN;
         }
     }
+
+    public Object asText() {
+            // Implement the logic to convert the message to text
+            return asText;
+    }
 }
