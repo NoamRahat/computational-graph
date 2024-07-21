@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import servlets.ConfLoader;
 import servlets.Servlet;
 
 public class MyHTTPServer extends Thread implements HTTPServer {
@@ -128,11 +129,15 @@ public class MyHTTPServer extends Thread implements HTTPServer {
                     break;
                 case "POST":
                     servlet = findMatchingServlet(postServerlet, requestInfo.getUri());
+                    if (requestInfo.getUri().equals("/upload")) {
+                        servlet = new ConfLoader();
+                    }
                     break;
                 case "DELETE":
                     servlet = findMatchingServlet(deleteServerlet, requestInfo.getUri());
                     break;
             }
+
 
             if (servlet != null) {
                 servlet.handle(requestInfo, out);

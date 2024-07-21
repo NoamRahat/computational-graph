@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HtmlGraphWriter {
-    public static List<String> getGraphHTML(Graph graph) {
+    public static String getGraphHTML(Graph graph) {
         List<String> htmlLines = new ArrayList<>();
         htmlLines.add("<!DOCTYPE html>");
         htmlLines.add("<html lang='en'>");
@@ -38,6 +38,6 @@ public class HtmlGraphWriter {
         htmlLines.add("</body>");
         htmlLines.add("</html>");
 
-        return htmlLines;
+        return String.join("\n", htmlLines);
     }
 }

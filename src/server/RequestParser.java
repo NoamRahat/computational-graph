@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RequestParser {
@@ -16,8 +16,19 @@ public class RequestParser {
         private String[] uriSegments;
         private Map<String, String> parameters;
         private byte[] content;
+        private String contentType;
+        private Map<String, String> headers; // New field for headers
+
+        // Constructor
+        public RequestInfo() {
+            this.headers = new HashMap<>(); // Initialize headers map
+        }
 
         // Getters
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
         public String getHttpCommand() {
             return httpCommand;
         }
@@ -36,6 +47,10 @@ public class RequestParser {
 
         public byte[] getContent() {
             return content;
+        }
+
+        public String getContentType() {
+            return contentType;
         }
 
         // Setters
@@ -59,6 +74,10 @@ public class RequestParser {
             this.content = content;
         }
 
+        public void setContentType(String contentType) {
+            this.contentType = contentType;
+        }
+
         public InputStream getContentStream() {
             if (this.content != null && this.content.length > 0) {
                 return new ByteArrayInputStream(this.content);
@@ -66,6 +85,24 @@ public class RequestParser {
                 // Handle the case where there is no content
                 return null;
             }
+        }
+
+        public void addHeader(String key, String value) {
+            this.headers.put(key, value);
+        }
+
+        @Override
+        public String toString() {
+            return "RequestInfo{" +
+                    "httpCommand='" + httpCommand + '\'' +
+                    ", uri='" + uri + '\'' +
+                    ", contentType='" + contentType + '\'' +
+                    ", headers=" + headers +
+                    '}';
+        }
+
+        public String getHeader(String key) {
+            return headers.get(key);
         }
     }
 
@@ -77,6 +114,7 @@ public class RequestParser {
         if (requestLine == null || requestLine.isEmpty()) {
             throw new IOException("Empty request line");
         }
+        System.out.println("Parsed request line: " + requestLine);
 
         // Split the request line into components
         String[] requestLineComponents = requestLine.split(" ");
@@ -95,47 +133,29 @@ public class RequestParser {
         // Read headers
         String line;
         int contentLength = 0;
-        while (!(line = reader.readLine()).isEmpty()) {
+        while ((line = reader.readLine()) != null && !line.isEmpty()) {
             if (line.startsWith("Content-Length:")) {
                 contentLength = Integer.parseInt(line.split(": ")[1]);
+            } else if (line.startsWith("Content-Type:")) {
+                requestInfo.setContentType(line.split(": ")[1]);
             }
+            System.out.println("Header: " + line);
+        }
+        System.out.println("Content-Length: " + contentLength);
+
+        // Read content based on the specified content length
+        if (contentLength > 0) {
+            char[] contentChars = new char[contentLength];
+            int bytesRead = reader.read(contentChars, 0, contentLength);
+            if (bytesRead != contentLength) {
+                throw new IOException("Expected " + contentLength + " bytes, but read " + bytesRead);
+            }
+            requestInfo.setContent(new String(contentChars).getBytes(StandardCharsets.UTF_8));
+        } else {
+            requestInfo.setContent(new byte[0]);
         }
 
-        // Read content based on the specified logic
-        StringBuilder contentBuilder = new StringBuilder();
-        while (reader.ready()) {
-            contentBuilder.append((char) reader.read());
-        }
-        requestInfo.setContent(contentBuilder.toString().getBytes());
-
-        // Add parameters if present
-        String[] contentParts = contentBuilder.toString().split("\n");
-        boolean nextLineAsContent = false;
-        String content = ""; // Initialize content variable to store the next line as content
-        for (String part : contentParts) {
-            if (nextLineAsContent) {
-                String trimmedPart = part.trim(); // Trim the part to remove leading and trailing whitespace
-                if (!trimmedPart.isEmpty()) {
-                    // This line should be added as content
-                    content = part + "\n";
-                    break; // Found the first non-empty line after a parameter, stop the loop
-                }
-                // If the line is empty, continue to the next iteration without setting nextLineAsContent to false
-                continue;
-            }
-            String[] keyValue = part.split("=");
-            if (keyValue.length > 1) {
-                String key = keyValue[0].trim();
-                String value = keyValue[1].trim();
-                requestInfo.getParameters().put(key, value);
-                nextLineAsContent = true; // Next line should be treated as content
-            }
-        }
-        // Assuming requestInfo has a method to set content
-        if (!content.isEmpty()) {
-            requestInfo.setContent(content.getBytes());
-        }
-
+        System.out.println("Parsed request: " + requestInfo);
         return requestInfo;
     }
 

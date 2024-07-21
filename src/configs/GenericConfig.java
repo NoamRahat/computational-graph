@@ -9,36 +9,36 @@ import java.util.List;
 import graph.Agent;
 
 public class GenericConfig implements Config {
-    private String confFile;
+    private String confContent;
     private List<ParallelAgent> agents;
 
     public GenericConfig() {
         this.agents = new ArrayList<>();
     }
 
-    public void setConfFile(String confFile) {
-        this.confFile = confFile;
+    public void setConfFile(String confContent) {
+        this.confContent = confContent;
     }
 
     @Override
     public void create() {
         try {
-            List<String> lines = Files.readAllLines(Paths.get(confFile));
-            if (lines.size() % 3 != 0) {
-                throw new IllegalArgumentException("Invalid configuration file format");
+            String[] lines = confContent.split("\n");
+            if (lines.length % 3 != 0) {
+                throw new IllegalArgumentException("Invalid configuration content format");
             }
 
-            for (int i = 0; i < lines.size(); i += 3) {
-                String className = lines.get(i);
-                String[] subs = lines.get(i + 1).split(",");
-                String[] pubs = lines.get(i + 2).split(",");
+            for (int i = 0; i < lines.length; i += 3) {
+                String className = lines[i].trim();
+                String[] subs = lines[i + 1].trim().split(",");
+                String[] pubs = lines[i + 2].trim().split(",");
 
                 Class<?> clazz = Class.forName(className);
                 Agent agent = (Agent) clazz.getConstructor(String[].class, String[].class).newInstance((Object) subs, (Object) pubs);
                 ParallelAgent parallelAgent = new ParallelAgent(agent, 10);
                 agents.add(parallelAgent);
             }
-        } catch (IOException | ReflectiveOperationException e) {
+        } catch (ReflectiveOperationException e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to create configuration", e);
         }
