@@ -64,4 +64,10 @@ public class BinOpAgent implements Agent {
         tm.getTopic(input2).unsubscribe(this);
         tm.getTopic(output).removePublisher(this);
     }
+
+	@Override
+	public Message getLastMessage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

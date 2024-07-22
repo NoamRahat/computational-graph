@@ -51,4 +51,10 @@ public class IncAgent implements Agent {
         tm.getTopic(subs[0]).unsubscribe(this);
         tm.getTopic(pubs[0]).removePublisher(this);
     }
+
+	@Override
+	public Message getLastMessage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

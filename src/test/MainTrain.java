@@ -201,6 +201,12 @@ public class MainTrain {
                 count = 0;
             }
         }
+
+		@Override
+		public Message getLastMessage() {
+			// TODO Auto-generated method stub
+			return null;
+		}
     }
 
     public static class TestAgent2 extends AAgent {
@@ -219,6 +225,12 @@ public class MainTrain {
         public double getSum() {
             return sum;
         }
+
+		@Override
+		public Message getLastMessage() {
+			// TODO Auto-generated method stub
+			return null;
+		}
     }
 
     public static void testDirectAgentCallback() {

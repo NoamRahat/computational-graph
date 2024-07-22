@@ -57,4 +57,10 @@ public class PlusAgent implements Agent {
         tm.getTopic(subs[1]).unsubscribe(this);
         tm.getTopic(pubs[0]).removePublisher(this);
     }
+
+	@Override
+	public Message getLastMessage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

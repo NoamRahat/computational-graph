@@ -71,4 +71,10 @@ public class ParallelAgent implements Agent {
         }
         agent.close();
     }
+
+	@Override
+	public Message getLastMessage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
