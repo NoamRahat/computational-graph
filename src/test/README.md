@@ -86,3 +86,44 @@
 
 - Ensure `close()` method properly stops the message processing thread.
 - Verify that no threads remain open after calling the `close()` method.
+
+
+
+# Exercise3 tests:
+
+# Test Cases for Node
+
+## Test Node Initialization
+
+- Verify that a `Node` can be initialized with a name.
+
+## Test Getters and Setters
+
+- Ensure getters and setters work correctly for the `name` and `message` fields.
+
+## Test Add Edge
+
+- Verify that `addEdge(Node node)` correctly adds an edge to the `edges` list.
+
+# Test Cases for Config
+
+## Test Config Interface Methods
+
+- Implement a mock `Config` and verify:
+  - `create()` correctly initializes agents and topics.
+  - `getName()` returns the correct name.
+  - `getVersion()` returns the correct version.
+
+# Test Cases for BinOpAgent
+
+## Test BinOpAgent Initialization
+
+- Verify that a `BinOpAgent` can be initialized with a name, input topics, output topic, and operation.
+
+## Test Callback Method
+
+- Ensure `callback(String topic, Message msg)` correctly processes messages and publishes results.
+
+## Test Reset Method
+
+- Verify that `reset()` correctly resets the state of the agent.

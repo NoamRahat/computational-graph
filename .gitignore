@@ -29,3 +29,5 @@ replay_pid*
 
 # vscode project files
 *.jason
+.metadata/*
+*.metadata
