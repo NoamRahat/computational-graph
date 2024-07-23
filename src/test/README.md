@@ -127,3 +127,46 @@
 ## Test Reset Method
 
 - Verify that `reset()` correctly resets the state of the agent.
+
+
+
+# Exercise 4 tests:
+
+## Config Interface
+
+### Methods
+
+- `create()`: Initializes the configuration.
+- `getName()`: Returns the name of the configuration.
+- `getVersion()`: Returns the version of the configuration.
+- `close()`: Closes all agents in the configuration.
+
+## PlusAgent
+
+### Constructor
+
+- Takes two parameters: `subs` (array of subscription topics) and `pubs` (array of publication topics).
+
+### Behavior
+
+- Subscribes to two topics and sums the received values.
+- Publishes the result to the specified publication topic.
+
+## IncAgent
+
+### Constructor
+
+- Takes two parameters: `subs` (array of subscription topics) and `pubs` (array of publication topics).
+
+### Behavior
+
+- Subscribes to a topic and increments the received value by 1.
+- Publishes the incremented value to the specified publication topic.
+
+## GenericConfig
+
+### Methods
+
+- `setConfFile(String filename)`: Sets the configuration file.
+- `create()`: Reads the configuration file and creates agents.
+- `close()`: Closes all created agents.

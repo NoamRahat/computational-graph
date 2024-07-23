@@ -5,6 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+
+
 
 import graph.Agent;
 
@@ -16,8 +21,10 @@ public class GenericConfig implements Config {
         this.agents = new ArrayList<>();
     }
 
-    public void setConfFile(String confContent) {
-        this.confContent = confContent;
+    public void setConfFile(String filePath) throws IOException {
+        // Read all bytes from the file and convert to String
+        byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
+        this.confContent = new String(fileBytes, StandardCharsets.UTF_8);
     }
 
     @Override

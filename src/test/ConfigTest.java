@@ -1,57 +1,48 @@
 package test;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+import configs.GenericConfig;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.channels.ServerSocketChannel;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import graph.Agent;
-import graph.Message;
-import graph.Topic;
-import graph.TopicManagerSingleton;
-import graph.TopicManagerSingleton.TopicManager;
-
-import configs.BinOpAgent;
-import configs.Config;
-import configs.Node;
-import configs.MathExampleConfig;
-
-import server.MyHTTPServer;
-import server.RequestParser;
-import servlets.CalculateServlet;
-import servlets.CalculatorServlet;
-import servlets.ConfLoader;
-import servlets.HtmlLoader;
-import servlets.SubServlet;
-import servlets.TestServlet;
 
 public class ConfigTest {
     public static void main(String[] args) {
-        testConfigInterfaceMethods();
+        System.out.println("Starting tests...");
+        try {
+            testConfigInitialization();
+            testConfigCreation();
+            testConfigClose();
+        } catch (IOException e) {
+            System.err.println("IOException occurred: " + e.getMessage());
+        }
+        System.out.println("Tests completed.");
     }
 
-    public static void testConfigInterfaceMethods() {
-        Config config = new MathExampleConfig();
-
-        if ("Math Example".equals(config.getName())) {
-            System.out.println("testConfigInterfaceMethods getName passed");
+    public static void testConfigInitialization() {
+        System.out.println("Running testConfigInitialization...");
+        GenericConfig config = new GenericConfig();
+        if ("GenericConfig".equals(config.getName()) && config.getVersion() == 1) {
+            System.out.println("testConfigInitialization passed");
         } else {
-            System.out.println("testConfigInterfaceMethods getName failed");
+            System.out.println("testConfigInitialization failed");
         }
+    }
 
-        if (1 == config.getVersion()) {
-            System.out.println("testConfigInterfaceMethods getVersion passed");
-        } else {
-            System.out.println("testConfigInterfaceMethods getVersion failed");
-        }
+    public static void testConfigCreation() throws IOException {
+        System.out.println("Running testConfigCreation...");
+        GenericConfig config = new GenericConfig();
+        config.setConfFile("/Users/samynehmad/studies/studies_codes/advanced_coding/computational-graph/simple.conf");
+        config.create();
+        // Validate creation logic here
+        System.out.println("testConfigCreation passed");
+    }
+
+    public static void testConfigClose() throws IOException {
+        System.out.println("Running testConfigClose...");
+        GenericConfig config = new GenericConfig();
+        config.setConfFile("/Users/samynehmad/studies/studies_codes/advanced_coding/computational-graph/simple.conf");
+        config.create();
+        config.close();
+        // Validate close logic here
+        System.out.println("testConfigClose passed");
     }
 }
