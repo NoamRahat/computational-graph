@@ -55,3 +55,34 @@
 
 - Verify that `addPublisher(Agent agent)` adds an agent to the publishers list.
 - Verify that `removePublisher(Agent agent)` removes an agent from the publishers list.
+
+
+
+
+# Exercise2 tests:
+
+## Test Cases for ParallelAgent
+
+### Test ParallelAgent Initialization
+
+- Verify that `ParallelAgent` can be initialized with an `Agent` and a specified queue capacity.
+
+### Test Callback Method
+
+- Ensure `callback(String topic, Message msg)` enqueues the message into the `BlockingQueue`.
+- Verify that the message is correctly passed to the `callback` method of the encapsulated `Agent` after being dequeued.
+
+### Test Message Processing
+
+- Verify that the `ParallelAgent` processes messages in the correct order.
+- Ensure that long-running `callback` methods in one agent do not block the execution of `callback` methods in other agents.
+
+### Test Thread Management
+
+- Verify that `ParallelAgent` starts a separate thread for processing the queue.
+- Ensure the processing thread sleeps when the queue is empty and wakes up when new messages are added.
+
+### Test Close Method
+
+- Ensure `close()` method properly stops the message processing thread.
+- Verify that no threads remain open after calling the `close()` method.
