@@ -10,7 +10,6 @@ public class ConfigTest {
         try {
             testConfigInitialization();
             testConfigCreation();
-            testConfigClose();
         } catch (IOException e) {
             System.err.println("IOException occurred: " + e.getMessage());
         }
@@ -32,17 +31,7 @@ public class ConfigTest {
         GenericConfig config = new GenericConfig();
         config.setConfFile("/Users/samynehmad/studies/studies_codes/advanced_coding/computational-graph/simple.conf");
         config.create();
-        // Validate creation logic here
-        System.out.println("testConfigCreation passed");
-    }
-
-    public static void testConfigClose() throws IOException {
-        System.out.println("Running testConfigClose...");
-        GenericConfig config = new GenericConfig();
-        config.setConfFile("/Users/samynehmad/studies/studies_codes/advanced_coding/computational-graph/simple.conf");
-        config.create();
         config.close();
-        // Validate close logic here
-        System.out.println("testConfigClose passed");
+        System.out.println("testConfigCreation passed");
     }
 }
