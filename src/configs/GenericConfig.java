@@ -21,15 +21,8 @@ public class GenericConfig implements Config {
         this.agents = new ArrayList<>();
     }
 
-    public void setConfFile(String filePath) {
-        // Read all bytes from the file and convert to String
-    	try {
-    		byte[] fileBytes = Files.readAllBytes(Paths.get(filePath));
-    		this.confContent = new String(fileBytes, StandardCharsets.UTF_8);
-    	} catch (IOException e) {
-            System.err.println("IOException occurred: " + e.getMessage());
-        }
-
+    public void setConfFile(String confContent) {
+            this.confContent = confContent;
     }
 
     @Override

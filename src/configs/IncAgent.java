@@ -7,6 +7,7 @@ import graph.TopicManagerSingleton.TopicManager;
 
 public class IncAgent implements Agent {
     private String name;
+    public Message lastmessage;
     private String[] subs;
     private String[] pubs;
     private double value;
@@ -16,6 +17,7 @@ public class IncAgent implements Agent {
         this.subs = subs;
         this.pubs = pubs;
         this.value = 0.0;
+        this.lastmessage = new Message("empty!");
 
         TopicManager tm = TopicManagerSingleton.get();
         tm.getTopic(subs[0]).subscribe(this);
@@ -42,6 +44,8 @@ public class IncAgent implements Agent {
             double result = value + 1;
             TopicManager tm = TopicManagerSingleton.get();
             tm.getTopic(pubs[0]).publish(new Message(result));
+            this.lastmessage = new Message(result);
+
         }
     }
 
@@ -54,7 +58,6 @@ public class IncAgent implements Agent {
 
 	@Override
 	public Message getLastMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.lastmessage;
 	}
 }

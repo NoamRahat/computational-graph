@@ -26,6 +26,7 @@ public class MyHTTPServer extends Thread implements HTTPServer {
     private final ConcurrentHashMap<String, Servlet> deleteServerlet;
     private final Lock lock;
     private volatile boolean running;
+    public int requests_debug_counter;
 
     public MyHTTPServer(int port, int nThreads) {
         this.port = port;
@@ -36,6 +37,8 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         this.deleteServerlet = new ConcurrentHashMap<>();
         this.lock = new ReentrantLock();
         this.running = true;
+        
+        this.requests_debug_counter = 0;
     }
 
     @Override
@@ -98,10 +101,12 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setSoTimeout(1000);
             while (running) {
+                
                 try {
                     Socket client = serverSocket.accept();
                     client.setSoTimeout(5000);
                     threadPool.submit(() -> handleClient(client));
+
                 } catch (SocketTimeoutException e) {
                     // Continue on timeout to allow for clean server shutdown
                 } catch (IOException e) {
@@ -117,7 +122,10 @@ public class MyHTTPServer extends Thread implements HTTPServer {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              OutputStream out = clientSocket.getOutputStream()) {
 
-            System.out.println("Handling client request");
+            requests_debug_counter++;
+
+            System.out.println("\n\nHandling client request, requests counter = " + requests_debug_counter);
+
 
             RequestParser.RequestInfo requestInfo = RequestParser.parseRequest(in);
             System.out.println("Parsed request: " + requestInfo.getHttpCommand() + " " + requestInfo.getUri());
@@ -147,6 +155,8 @@ public class MyHTTPServer extends Thread implements HTTPServer {
                 out.write(notFoundResponse.getBytes());
                 System.out.println("No matching servlet found. Sent 404 Not Found.");
             }
+            System.out.println("\n\n ************************** \n\n");
+
 
         } catch (IOException e) {
             e.printStackTrace();

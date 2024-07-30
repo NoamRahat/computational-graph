@@ -7,14 +7,14 @@
 </head>
 <body>
     <h2>Configuration Upload</h2>
-    <form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data">
+    <form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data" target="graph-iframe">
         <input type="file" name="configFile" required>
         <button type="submit">Deploy</button>
     </form>
 
     <h2>Publish Message</h2>
-    <form action="http://localhost:8080/publish" method="get">
-        <input type="text" name="topic" placeholder="Topic" required>
+    <form action="http://localhost:8080/publish" method="get" name ="graph-iframe">
+        <input type="text" name="topic" placeholder="Topic" required> 
         <input type="text" name="message" placeholder="Message" required>
         <button type="submit">Publish</button>
     </form>

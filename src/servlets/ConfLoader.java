@@ -25,7 +25,8 @@ public class ConfLoader implements Servlet {
                 return;
             }
 
-            System.out.println("Request content: " + new String(ri.getContent(), StandardCharsets.UTF_8));
+            System.out.println("Request content: \n" + new String(ri.getContent(), StandardCharsets.UTF_8));
+            System.out.println("End of Request content");
 
             // Extract boundary from Content-Type header
             String contentType = ri.getContentType();
@@ -53,6 +54,7 @@ public class ConfLoader implements Servlet {
                 sendErrorResponse(toClient, "Config file not found in the request", 400);
                 return;
             }
+            System.out.println("config content = " + configContent);
 
             GenericConfig config = new GenericConfig();
             config.setConfFile(configContent);

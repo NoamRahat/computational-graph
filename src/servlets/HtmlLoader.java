@@ -26,6 +26,8 @@ public class HtmlLoader implements Servlet {
             toClient.write(response.getBytes());
             toClient.write(content);
         } else {
+        	System.out.println("On function handle. Sent 404 Not Found. filepath = " + filePath);
+        	
             String notFound = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n<html><body><h1>404 Not Found</h1></body></html>";
             toClient.write(notFound.getBytes());
         }

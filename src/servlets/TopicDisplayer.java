@@ -14,13 +14,16 @@ public class TopicDisplayer implements Servlet {
     public void handle(RequestInfo ri, OutputStream toClient) throws IOException {
         String topic = ri.getParameters().get("topic");
         String messageContent = ri.getParameters().get("message");
-
+                
+        System.out.println("message =" + messageContent + "\n topic = " + topic);
+        
         TopicManagerSingleton.get().getTopic(topic).publish(new Message(messageContent));
-
+        
         StringBuilder htmlResponse = new StringBuilder();
         htmlResponse.append("<html><body><table border='1'><tr><th>Topic</th><th>Last Value</th></tr>");
+        
+        for (Topic t : TopicManagerSingleton.get().getTopics()) {	
 
-        for (Topic t : TopicManagerSingleton.get().getTopics()) {
             htmlResponse.append("<tr><td>").append(t.getName()).append("</td><td>")
                         .append(t.getLastMessage().asText()).append("</td></tr>");
         }
@@ -28,6 +31,8 @@ public class TopicDisplayer implements Servlet {
         htmlResponse.append("</table></body></html>");
 
         String response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + htmlResponse.toString();
+        System.out.println("response = " + response + "\n  = ");
+        
         toClient.write(response.getBytes(StandardCharsets.UTF_8));
     }
 

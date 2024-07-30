@@ -9,6 +9,7 @@ import graph.TopicManagerSingleton.TopicManager;
 
 public class BinOpAgent implements Agent {
     private String name;
+    public Message lastmessage;
     private String input1;
     private String input2;
     private String output;
@@ -24,6 +25,7 @@ public class BinOpAgent implements Agent {
         this.operation = operation;
         this.value1 = 0.0;
         this.value2 = 0.0;
+        this.lastmessage = new Message("empty!");
 
         TopicManager tm = TopicManagerSingleton.get();
         tm.getTopic(input1).subscribe(this);
@@ -54,6 +56,7 @@ public class BinOpAgent implements Agent {
             double result = operation.apply(value1, value2);
             TopicManager tm = TopicManagerSingleton.get();
             tm.getTopic(output).publish(new Message(result));
+            this.lastmessage = new Message(result);
         }
     }
 
@@ -67,7 +70,6 @@ public class BinOpAgent implements Agent {
 
 	@Override
 	public Message getLastMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.lastmessage;
 	}
 }

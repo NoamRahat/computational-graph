@@ -7,6 +7,7 @@ import graph.TopicManagerSingleton.TopicManager;
 
 public class PlusAgent implements Agent {
     private String name;
+    public Message lastmessage;
     private String[] subs;
     private String[] pubs;
     private double x, y;
@@ -17,11 +18,13 @@ public class PlusAgent implements Agent {
         this.pubs = pubs;
         this.x = 0.0;
         this.y = 0.0;
+        this.lastmessage = new Message("empty!");
 
         TopicManager tm = TopicManagerSingleton.get();
         tm.getTopic(subs[0]).subscribe(this);
         tm.getTopic(subs[1]).subscribe(this);
         tm.getTopic(pubs[0]).addPublisher(this);
+        
     }
 
     @Override
@@ -47,6 +50,7 @@ public class PlusAgent implements Agent {
             double result = x + y;
             TopicManager tm = TopicManagerSingleton.get();
             tm.getTopic(pubs[0]).publish(new Message(result));
+            this.lastmessage = new Message(result);
         }
     }
 
@@ -60,7 +64,6 @@ public class PlusAgent implements Agent {
 
 	@Override
 	public Message getLastMessage() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.lastmessage;
 	}
 }
