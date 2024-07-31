@@ -6,6 +6,7 @@ import graph.TopicManagerSingleton;
 import graph.TopicManagerSingleton.TopicManager;
 
 public class IncAgent implements Agent {
+    private static int agentCounter = 0;
     private String name;
     public Message lastmessage;
     private String[] subs;
@@ -13,7 +14,8 @@ public class IncAgent implements Agent {
     private double value;
 
     public IncAgent(String[] subs, String[] pubs) {
-        this.name = "IncAgent";
+		agentCounter++;
+		this.name = "IncAgent"+agentCounter;
         this.subs = subs;
         this.pubs = pubs;
         this.value = 0.0;

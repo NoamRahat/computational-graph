@@ -6,6 +6,7 @@ import graph.TopicManagerSingleton;
 import graph.TopicManagerSingleton.TopicManager;
 
 public class PlusAgent implements Agent {
+    private static int agentCounter = 0;
     private String name;
     public Message lastmessage;
     private String[] subs;
@@ -13,7 +14,8 @@ public class PlusAgent implements Agent {
     private double x, y;
 
     public PlusAgent(String[] subs, String[] pubs) {
-        this.name = "PlusAgent";
+        agentCounter++;
+        this.name = "PlusAgent" + agentCounter;
         this.subs = subs;
         this.pubs = pubs;
         this.x = 0.0;
