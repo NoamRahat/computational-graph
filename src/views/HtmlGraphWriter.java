@@ -5,6 +5,7 @@ import configs.Node;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class HtmlGraphWriter {
     public static String getGraphHTML(Graph graph) {
@@ -20,17 +21,29 @@ public class HtmlGraphWriter {
         htmlLines.add("        .node { position: absolute; padding: 10px; border: 1px solid black; }");
         htmlLines.add("        .topic { background-color: lightblue; border-radius: 0; }");
         htmlLines.add("        .agent { background-color: lightgreen; border-radius: 50%; }");
+        htmlLines.add("        .info-text { margin-top: 20px; text-align: center; font-size: 14px; color: #333; }");
         htmlLines.add("    </style>");
         htmlLines.add("</head>");
         htmlLines.add("<body>");
         htmlLines.add("    <canvas id='graphCanvas' width='800' height='600'></canvas>");
+        htmlLines.add("    <div class='info-text'>");
+        htmlLines.add("        Each new upload of a config file will add new Topics and new Agents and update the graph.<br>");
+        htmlLines.add("        The colors on the graph's edges are for readability only and have no real meaning.");
+        htmlLines.add("    </div>");
         htmlLines.add("    <script>");
+
+        // Predefined list of 10 colors
+        String[] colors = {
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        };
+        Random rand = new Random();
 
         // Calculate grid positions for nodes
         int rows = (int) Math.ceil(Math.sqrt(graph.size()));
         int cols = rows;
         int index = 0;
-        
+
         // Pass node data to JavaScript
         htmlLines.add("const nodes = {");
         for (Node node : graph) {
@@ -44,11 +57,12 @@ public class HtmlGraphWriter {
         }
         htmlLines.add("};");
 
-        // Pass edge data to JavaScript
+        // Pass edge data to JavaScript with random colors
         htmlLines.add("const edges = [");
         for (Node node : graph) {
             for (Node connectedNode : node.getEdges()) {
-                htmlLines.add(String.format("    { from: '%s', to: '%s' },", node.getName(), connectedNode.getName()));
+                String color = colors[rand.nextInt(colors.length)];
+                htmlLines.add(String.format("    { from: '%s', to: '%s', color: '%s' },", node.getName(), connectedNode.getName(), color));
             }
         }
         htmlLines.add("];");
@@ -82,7 +96,7 @@ public class HtmlGraphWriter {
         htmlLines.add("    ctx.beginPath();");
         htmlLines.add("    ctx.moveTo(fromNode.x, fromNode.y);");
         htmlLines.add("    ctx.lineTo(toNode.x, toNode.y);");
-        htmlLines.add("    ctx.strokeStyle = 'black';");
+        htmlLines.add("    ctx.strokeStyle = edge.color;");
         htmlLines.add("    ctx.stroke();");
         htmlLines.add("    const headlen = 10;");
         htmlLines.add("    const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);");
@@ -91,7 +105,7 @@ public class HtmlGraphWriter {
         htmlLines.add("    ctx.lineTo(toNode.x - headlen * Math.cos(angle - Math.PI / 6), toNode.y - headlen * Math.sin(angle - Math.PI / 6));");
         htmlLines.add("    ctx.lineTo(toNode.x - headlen * Math.cos(angle + Math.PI / 6), toNode.y - headlen * Math.sin(angle + Math.PI / 6));");
         htmlLines.add("    ctx.lineTo(toNode.x, toNode.y);");
-        htmlLines.add("    ctx.fillStyle = 'black';");
+        htmlLines.add("    ctx.fillStyle = edge.color;");
         htmlLines.add("    ctx.fill();");
         htmlLines.add("});");
 
