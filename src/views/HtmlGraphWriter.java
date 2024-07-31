@@ -28,6 +28,7 @@ public class HtmlGraphWriter {
         htmlLines.add("    <canvas id='graphCanvas' width='800' height='600'></canvas>");
         htmlLines.add("    <div class='info-text'>");
         htmlLines.add("        Each new upload of a config file will add new Topics and new Agents and update the graph.<br>");
+        htmlLines.add("        When a Topic hasnt received any message ('empty!'), is equivalent of receiving '0'.<br>");
         htmlLines.add("        The colors on the graph's edges are for readability only and have no real meaning.");
         htmlLines.add("    </div>");
         htmlLines.add("    <script>");
