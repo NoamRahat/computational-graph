@@ -26,11 +26,21 @@ public class HtmlGraphWriter {
         htmlLines.add("    <canvas id='graphCanvas' width='800' height='600'></canvas>");
         htmlLines.add("    <script>");
 
+        // Calculate grid positions for nodes
+        int rows = (int) Math.ceil(Math.sqrt(graph.size()));
+        int cols = rows;
+        int index = 0;
+        
         // Pass node data to JavaScript
         htmlLines.add("const nodes = {");
         for (Node node : graph) {
             String nodeType = node.getName().startsWith("T") ? "topic" : "agent";
-            htmlLines.add(String.format("    '%s': { x: %d, y: %d, type: '%s' },", node.getName(), (int)(Math.random() * 700), (int)(Math.random() * 500), nodeType));
+            int row = index / cols;
+            int col = index % cols;
+            int x = 100 + col * 150;
+            int y = 100 + row * 150;
+            htmlLines.add(String.format("    '%s': { x: %d, y: %d, type: '%s' },", node.getName(), x, y, nodeType));
+            index++;
         }
         htmlLines.add("};");
 
