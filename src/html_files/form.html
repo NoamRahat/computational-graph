@@ -8,7 +8,7 @@
 <body>
     <h2>Configuration Upload</h2>
     <form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data" target="graph-iframe">
-        <input type="file" name="configFile" required>
+        <input type="file" name="configFile" accept=".conf" required input  >
         <button type="submit">Deploy</button>
     </form>
 
