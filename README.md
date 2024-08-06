@@ -3,7 +3,7 @@
 Welcome to the Computational Graph project repository. This project demonstrates the implementation of a computational graph using a subscriber/publisher architecture in Java. The project includes components for managing agents, configurations, and an HTTP server with servlets for handling various requests.
 
 ## Authors 
-Noam Rahat  - noamrah@gmail.com  
+Noam Rahat  - noamrht@gmail.com  
 Samy Nehmad - samy.nehmad1@gmail.com
 
 ## Background
