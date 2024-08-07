@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "computational-graph_72c2ace"
+        },
+        {
+            "type": "java",
             "name": "MainTrain",
             "request": "launch",
             "mainClass": "test.MainTrain",
