@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Panel</title>
+</head>
+<body>
+    <h2>Configuration Upload</h2>
+    <form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data" target="graph-iframe">
+        <input type="file" name="configFile" accept=".conf" required input  >
+        <button type="submit">Deploy</button>
+    </form>
+
+    <h2>Publish Message</h2>
+    <form action="http://localhost:8080/publish" method="get" target="table-iframe">
+        <input type="text" name="topic" placeholder="Topic" required> 
+        <input type="text" name="message" placeholder="Message" required>
+        <button type="submit">Publish</button>
+    </form>
+
+    <h2>Instructions</h2>
+    <form>
+        <div class="instructions">
+            <p>To upload a configuration file, click 'Choose File' and select your config file. Then click 'Deploy' to update the graph with new topics and agents.</p>
+            <p>After that you can publish messages to each of the preloaded Topics.</p>
+
+        </div>
+    </form>
+
+</body>
+</html>
